@@ -41,6 +41,11 @@ const config = env => {
       ]
     },
     plugins: [
+      new webpack.DefinePlugin({
+        'process.env': {
+          NODE_ENV: `"${env.env}"`
+        }
+      }),
       new HtmlWebpackPlugin({
         filename: 'index.html',
         template: 'index.html',

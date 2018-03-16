@@ -111,25 +111,30 @@ const actions: ActionTree<IState, any> = {
   },
   [Actions.LOAD_PROJECT]: ({ state, commit }) => {
     // TODO: Fetch from backend
-    let project = mockProject
+    let project: Project | undefined
+    if (process.env.NODE_ENV === 'development') {
+      project = mockProject
+    }
     if (!project) {
       const storageName = localStorage.getItem('projectName')
-      project = new Project(storageName || 'Untitled')
-      const storage = localStorage.getItem('songs')
-      if (storage) {
-        project.songs = []
-        const storedSongs = JSON.parse(storage)
-        storedSongs.forEach((storedSong: ISongData) => {
-          console.log(storedSong)
-          const song = Song.deserialize(storedSong)
-          if (song) {
-            project.songs.push(song)
-          }
-        })
+      if (storageName) {
+        project = new Project(storageName)
+        const storage = localStorage.getItem('songs')
+        if (storage) {
+          const storedSongs = JSON.parse(storage)
+          storedSongs.forEach((storedSong: ISongData) => {
+            const song = Song.deserialize(storedSong)
+            if (song) {
+              project!.songs.push(song)
+            }
+          })
+        }
       }
     }
-    commit(Mutations.OPEN_PROJECT, project)
-    commit(Mutations.INIT_SONGS, project.songs)
+    if (project) {
+      commit(Mutations.OPEN_PROJECT, project)
+      commit(Mutations.INIT_SONGS, project.songs)
+    }
   },
   [Actions.ADD_NEW_SONG]: ({ state, commit, dispatch }, songName) => {
     const newSong = new Song(songName)
