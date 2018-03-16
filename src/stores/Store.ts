@@ -38,6 +38,9 @@ const mutations: MutationTree<IState> = {
       state.currPartId = ''
     }
   },
+  [Mutations.ADD_NEW_SONG]: (state, newSong: Song) => {
+    state.songs.push(newSong)
+  },
   [Mutations.UPDATE_CURRENT_SONG]: (state, song) => {
     Vue.set(state, 'currSong', song)
     if (song.notes && song.notes.arrangement) {
@@ -108,23 +111,30 @@ const actions: ActionTree<IState, any> = {
   },
   [Actions.LOAD_PROJECT]: ({ state, commit }) => {
     // TODO: Fetch from backend
-    // START Mock data
-    const project = mockProject || new Project('Untitled')
-    const storage = localStorage.getItem('songs')
-    if (storage) {
-      project.songs = []
-      const storedSongs = JSON.parse(storage)
-      storedSongs.forEach((storedSong: ISongData) => {
-        console.log(storedSong)
-        const song = Song.deserialize(storedSong)
-        if (song) {
-          project.songs.push(song)
-        }
-      })
+    let project = mockProject
+    if (!project) {
+      const storageName = localStorage.getItem('projectName')
+      project = new Project(storageName || 'Untitled')
+      const storage = localStorage.getItem('songs')
+      if (storage) {
+        project.songs = []
+        const storedSongs = JSON.parse(storage)
+        storedSongs.forEach((storedSong: ISongData) => {
+          console.log(storedSong)
+          const song = Song.deserialize(storedSong)
+          if (song) {
+            project.songs.push(song)
+          }
+        })
+      }
     }
-    // END Mock data
     commit(Mutations.OPEN_PROJECT, project)
     commit(Mutations.INIT_SONGS, project.songs)
+  },
+  [Actions.ADD_NEW_SONG]: ({ state, commit, dispatch }, songName) => {
+    const newSong = new Song(songName)
+    commit(Mutations.ADD_NEW_SONG, newSong)
+    dispatch(Actions.SAVE_EDITS)
   },
   [Actions.SAVE_EDITS]: ({ state, commit }) => {
     const json = JSON.stringify(
@@ -133,6 +143,7 @@ const actions: ActionTree<IState, any> = {
         return { id, notes, name }
       })
     )
+    localStorage.setItem('projectName', state.project!.name)
     localStorage.setItem('songs', json)
   }
 }

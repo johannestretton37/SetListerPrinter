@@ -3,21 +3,26 @@
   <div v-if="project">
     <h1>{{ projectName }}</h1>
     <song v-if="songs" v-for="(song, i) in songs" :song="song" :key="i" />
-    <div v-if="songs" class="button" @click="reset">RESET</div>
+    <div v-if="songs.length > 1" class="button" @click="reset">RESET</div>
+    <div class="button" @click="addNewSong">ADD NEW SONG</div>
   </div>
   <div v-else>
     <h1>SetListPrinter 1.0</h1>
-    <label for="input">Enter SetList title</label>
-    <input
-    id="input"
-    type="text"
-    v-model="title"
-    placeholder="Title">
-    <div
-    class="button"
-    @click="createProject">CREATE</div>
+    <form @submit.prevent="createProject">
+      <label for="input">Enter new SetList title</label>
+      <input
+      id="input"
+      type="text"
+      v-model="title"
+      autofocus="true"
+      placeholder="title">
+      <input
+      type="submit"
+      value="CREATE"
+      class="button"
+      @click="createProject"/>
+    </form>
   </div>
-
 </div>
 </template>
 
@@ -60,6 +65,13 @@ export default class App extends Vue {
     }
   }
 
+  private addNewSong() {
+    const songName = prompt('Enter the name of the song')
+    if (songName !== '') {
+      this.$store.dispatch(Actions.ADD_NEW_SONG, songName)
+    }
+  }
+
   private reset() {
     const clear = confirm('This will delete all chords. Are you sure?')
     if (clear) {
@@ -89,6 +101,29 @@ h1 {
   padding-bottom: 0.8em;
   width: 50%;
   margin: 1.6em auto 1em;
+}
+form {
+  display: flex;
+  flex-direction: column;
+  margin: 1em auto;
+  max-width: 600px;
+  & > * {
+    display: block;
+    flex-grow: 1;
+    margin-bottom: 1em;
+  }
+  label {
+    border: 1px solid #eee;
+    border-radius: 5px;
+    text-align: center;
+    padding: 0.6em 2em;
+  }
+  input {
+    padding: 0.6em 2em;
+    font-size: 1em;
+    appearance: none;
+    outline: none;
+  }
 }
 .button {
   display: block;

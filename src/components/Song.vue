@@ -353,26 +353,6 @@ export default class Song extends Vue {
       margin: 0.5em;
     }
   }
-  form {
-    display: flex;
-    flex-direction: column;
-    margin: 1em auto;
-    max-width: 600px;
-    & > * {
-      display: block;
-      flex-grow: 1;
-      margin-bottom: 1em;
-    }
-    label {
-      border: 1px solid #eee;
-      border-radius: 5px;
-      text-align: center;
-      padding: 0.6em 2em;
-    }
-    input {
-      padding: 0.6em 2em;
-    }
-  }
   .parts {
     margin: 0 auto;
     padding: 0;
