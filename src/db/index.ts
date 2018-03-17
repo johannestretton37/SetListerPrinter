@@ -2,16 +2,16 @@ import * as firebase from 'firebase'
 import { Store } from 'vuex'
 import { Collections, Mutations } from '../constants'
 import { IState } from '../stores/Store'
-import Project from '../classes/Project'
+import SetList from '../classes/SetList'
 import Song from '../classes/Song'
 import User from '../classes/User'
 import IUserInfo from '../interfaces/IUserInfo'
 
 class FirestoreDatabaseConnection {
-  public projectUnsubscribe: () => void
+  public setListUnsubscribe: () => void
   constructor(public store: Store<IState>) {
-    this.projectUnsubscribe = () => {
-      console.log('No project to unsubscribe from')
+    this.setListUnsubscribe = () => {
+      console.log('No setList to unsubscribe from')
     }
   }
 
@@ -54,57 +54,57 @@ class FirestoreDatabaseConnection {
   }
 
   /**
-   * Create new project
-   * @param {string} title - The Project name
+   * Create new setList
+   * @param {string} title - The SetList name
    * @param {User} user - The current user
-   * @returns {string} - The newly created project's id
+   * @returns {string} - The newly created setList's id
    */
-  public addProject = (title: string, user: User): Promise<string> => {
+  public addSetList = (title: string, user: User): Promise<string> => {
     return new Promise(async (resolve, reject) => {
       try {
-        const projectsRef = await this.getCollectionRef(Collections.PROJECTS)
-        const projectRef = await projectsRef.add({
+        const setListsRef = await this.getCollectionRef(Collections.SETLISTS)
+        const setListRef = await setListsRef.add({
           title,
           users: {
             [user.uid]: true
           }
         })
-        // Open new project
-        await this.storeUsersLastSetListId(user, projectRef.id)
-        return resolve(projectRef.id)
+        // Open new setList
+        await this.storeUsersLastSetListId(user, setListRef.id)
+        return resolve(setListRef.id)
       } catch (error) {
         return reject(error)
       }
     })
   }
 
-  public getProjects = (uid: string): Promise<{ [key: string]: Project }> => {
+  public getSetLists = (uid: string): Promise<{ [key: string]: SetList }> => {
     return new Promise(async (resolve, reject) => {
       try {
-        const projectsRef = await this.getCollectionRef(Collections.PROJECTS)
-        const userProjects = await projectsRef.where(`users.${uid}`, '==', true).get()
-        const projects: { [key: string]: Project } = {}
-        userProjects.forEach(projectSnapshot => {
-          const { title, users } = projectSnapshot.data()
-          const project: Project = {
-            id: projectSnapshot.id,
+        const setListsRef = await this.getCollectionRef(Collections.SETLISTS)
+        const userSetLists = await setListsRef.where(`users.${uid}`, '==', true).get()
+        const setLists: { [key: string]: SetList } = {}
+        userSetLists.forEach(setListSnapshot => {
+          const { title, users } = setListSnapshot.data()
+          const setList: SetList = {
+            id: setListSnapshot.id,
             title,
             songs: [],
             users
           }
-          projects[`${projectSnapshot.id}`] = project
+          setLists[`${setListSnapshot.id}`] = setList
         })
-        return resolve(projects)
+        return resolve(setLists)
       } catch (error) {
         console.log(error)
-        console.log('Found no projects')
+        console.log('Found no setLists')
         debugger
         return reject()
       }
     })
   }
 
-  public getUsersLastProjectId = (user: User): Promise<string> => {
+  public getUsersLastSetListId = (user: User): Promise<string> => {
     return new Promise(async (resolve, reject) => {
       try {
         // Get users ref
@@ -114,31 +114,31 @@ class FirestoreDatabaseConnection {
         if (!storedUser) {
           throw new Error('No user found with id: ' + user.uid)
         }
-        const currentProject = storedUser.currentProject
-        return resolve(currentProject)
+        const currentSetList = storedUser.currentSetList
+        return resolve(currentSetList)
       } catch (error) {
         return reject(error)
       }
     })
   }
 
-  public storeUsersLastSetListId = (user: User, projectId: string): void => {
+  public storeUsersLastSetListId = (user: User, setListId: string): void => {
     // Get users ref
     this.getCollectionRef(Collections.USERS).then(usersRef => {
       return usersRef.doc(user.uid).set(
         {
-          currentProject: projectId
+          currentSetList: setListId
         },
         { merge: true }
       )
     })
   }
 
-  public watchProject = (project: Project): void => {
-    this.projectUnsubscribe()
-    this.getCollectionRef(Collections.PROJECTS).then(projectsRef => {
-      this.projectUnsubscribe = projectsRef
-        .doc(project.id)
+  public watchSetList = (setList: SetList): void => {
+    this.setListUnsubscribe()
+    this.getCollectionRef(Collections.SETLISTS).then(setListsRef => {
+      this.setListUnsubscribe = setListsRef
+        .doc(setList.id)
         .collection(Collections.SONGS)
         .onSnapshot(snapshot => {
           snapshot.docChanges.forEach(change => {
@@ -148,7 +148,7 @@ class FirestoreDatabaseConnection {
               // console.log('LOCAL CHANGE ONLY')
               switch (change.type) {
                 case 'added':
-                  // console.log(`Adding transfer ${transfer.date} to currentProject`)
+                  // console.log(`Adding transfer ${transfer.date} to currentSetList`)
                   this.store.commit(Mutations.ADD_SONG, song)
                   break
                 case 'modified':
@@ -156,7 +156,7 @@ class FirestoreDatabaseConnection {
                   this.store.commit(Mutations.EDIT_SONG, song)
                   break
                 case 'removed':
-                  // console.log('Remove transfer from currentProject')
+                  // console.log('Remove transfer from currentSetList')
                   this.store.commit(Mutations.DELETE_SONG, song)
                   break
               }
@@ -164,7 +164,7 @@ class FirestoreDatabaseConnection {
               // console.log('INCOMING CHANGE - UPDATE UI!!!')
               switch (change.type) {
                 case 'added':
-                  // console.log(`Adding transfer ${transfer.date} to currentProject`)
+                  // console.log(`Adding transfer ${transfer.date} to currentSetList`)
                   this.store.commit(Mutations.ADD_SONG, song)
                   break
                 case 'modified':
@@ -172,7 +172,7 @@ class FirestoreDatabaseConnection {
                   this.store.commit(Mutations.EDIT_SONG, song)
                   break
                 case 'removed':
-                  // console.log('Remove transfer from currentProject')
+                  // console.log('Remove transfer from currentSetList')
                   this.store.commit(Mutations.DELETE_SONG, song)
                   break
               }
@@ -188,7 +188,7 @@ class FirestoreDatabaseConnection {
   // public populateProjectUsers = async (project: Project): Promise<Project> => {
   //   try {
   //     // Get projects ref
-  //     const projectsRef = await this.getCollectionRef(Collections.PROJECTS)
+  //     const projectsRef = await this.getCollectionRef(Collections.SETLISTS)
   //     // Load users
   //     const storedProjectRef = await projectsRef.doc(project.id)
   //     const storedProjectDoc = await storedProjectRef.get()
@@ -229,7 +229,7 @@ class FirestoreDatabaseConnection {
   // public addTransfer = (transfer: Transfer, projectId: string, userId: string): Promise<object> => {
   //   return new Promise(async (resolve, reject) => {
   //     try {
-  //       const projectsRef = await this.getCollectionRef(Collections.PROJECTS)
+  //       const projectsRef = await this.getCollectionRef(Collections.SETLISTS)
   //       const transfersRef = await projectsRef.doc(projectId).collection(Collections.TRANSFERS)
   //       // Check if transfer already exists
   //       let transferExists = false
@@ -274,7 +274,7 @@ class FirestoreDatabaseConnection {
   // ): Promise<object> => {
   //   return new Promise(async (resolve, reject) => {
   //     try {
-  //       const projectsRef = await this.getCollectionRef(Collections.PROJECTS)
+  //       const projectsRef = await this.getCollectionRef(Collections.SETLISTS)
   //       const transfersRef = await projectsRef.doc(project.id).collection(Collections.TRANSFERS)
   //       // Find existing transfers
   //       const existingTransfers = project.transfers.slice()
@@ -310,7 +310,7 @@ class FirestoreDatabaseConnection {
   // public deleteTransfer = (transferId: string, projectId: string) => {
   //   return new Promise(async (resolve, reject) => {
   //     try {
-  //       const projectsRef = await this.getCollectionRef(Collections.PROJECTS)
+  //       const projectsRef = await this.getCollectionRef(Collections.SETLISTS)
   //       const transfersRef = await projectsRef.doc(projectId).collection(Collections.TRANSFERS)
   //       return resolve(transfersRef.doc(transferId).delete())
   //     } catch (error) {
@@ -349,7 +349,7 @@ class FirestoreDatabaseConnection {
   //       const invitationResult = await invitationsRef.add(invitation)
   //       console.log('Created new invitation', invitationResult)
   //       // Register invitation id on project
-  //       const projectsRef = await this.getCollectionRef(Collections.PROJECTS)
+  //       const projectsRef = await this.getCollectionRef(Collections.SETLISTS)
   //       const projectInvitationResult = await projectsRef.doc(project.id).set(
   //         {
   //           invitedUsers: {
@@ -448,7 +448,7 @@ class FirestoreDatabaseConnection {
   // ): Promise<boolean> => {
   //   return new Promise(async (resolve, reject) => {
   //     try {
-  //       const projectsRef = await this.getCollectionRef(Collections.PROJECTS)
+  //       const projectsRef = await this.getCollectionRef(Collections.SETLISTS)
   //       // Remove invited email from project.invitedUsers and
   //       // add user uid to project.users
   //       await projectsRef.doc(invitation.projectId).set(

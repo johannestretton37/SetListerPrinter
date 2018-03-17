@@ -3,5 +3,5 @@ export default interface IUserInfo {
   name: string
   avatar: string
   email: string
-  currentProject: string
+  currentSetList: string
 }

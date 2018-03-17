@@ -6,10 +6,10 @@ class User {
   public lastName: string
   public avatar: string
   public email: string
-  public currentProject: string
+  public currentSetList: string
 
   constructor(userInfo: IUserInfo) {
-    const { name, email, avatar, uid, currentProject } = userInfo
+    const { name, email, avatar, uid, currentSetList } = userInfo
     if (name) {
       const names = name.split(' ')
       this.firstName = names[0]
@@ -21,7 +21,7 @@ class User {
     this.uid = uid
     this.avatar = avatar
     this.email = email
-    this.currentProject = currentProject
+    this.currentSetList = currentSetList
   }
 
   public name = (): string => {

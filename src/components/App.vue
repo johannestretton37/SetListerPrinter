@@ -1,14 +1,14 @@
 <template>
 <div id="app">
-  <div v-if="project">
-    <h1>{{ projectTitle }}</h1>
+  <div v-if="setList">
+    <h1>{{ setListTitle }}</h1>
     <song v-if="songs" v-for="(song, i) in songs" :song="song" :key="i" />
     <div v-if="songs.length > 0" class="button" @click="reset">RESET</div>
     <div class="button" @click="addNewSong">ADD NEW SONG</div>
   </div>
   <div v-else>
     <h1>SetListPrinter 1.0</h1>
-    <form @submit.prevent="createProject">
+    <form @submit.prevent="createSetList">
       <label for="input">Enter new SetList title</label>
       <input
       id="input"
@@ -20,7 +20,7 @@
       type="submit"
       value="CREATE"
       class="button"
-      @click="createProject"/>
+      @click="createSetList"/>
     </form>
   </div>
 </div>
@@ -32,8 +32,11 @@ import Component from 'vue-class-component'
 import Song from './Song.vue'
 import { Actions, Mutations } from '../constants'
 import SongModel from '../classes/Song'
-import Project from '../classes/Project'
+import SetList from '../classes/SetList'
 import ISongData from '../interfaces/ISongData'
+import firebaseConfig from '../../config/firebase.config'
+import firebase from 'firebase'
+import 'firebase/firestore'
 
 @Component({
   components: {
@@ -43,12 +46,12 @@ import ISongData from '../interfaces/ISongData'
 export default class App extends Vue {
   private title: string = ''
 
-  get project(): Project {
-    return this.$store.getters.project
+  get setList(): SetList {
+    return this.$store.getters.setList
   }
 
-  get projectTitle(): string {
-    return this.$store.getters.projectTitle
+  get setListTitle(): string {
+    return this.$store.getters.setListTitle
   }
 
   get songs(): SongModel[] {
@@ -59,9 +62,9 @@ export default class App extends Vue {
     return songs
   }
 
-  private createProject() {
+  private createSetList() {
     if (this.title !== '') {
-      this.$store.dispatch(Actions.CREATE_PROJECT, this.title)
+      this.$store.dispatch(Actions.CREATE_SETLIST, this.title)
     }
   }
 
@@ -76,13 +79,17 @@ export default class App extends Vue {
     const clear = confirm('This will delete all chords. Are you sure?')
     if (clear) {
       localStorage.clear()
-      this.$store.dispatch(Actions.LOAD_PROJECT)
+      this.$store.dispatch(Actions.LOAD_SETLIST)
     }
+  }
+
+  private created() {
+    firebase.initializeApp(firebaseConfig)
   }
 
   private mounted() {
     console.log('App and running \uD83D\uDE00')
-    this.$store.dispatch(Actions.LOAD_PROJECT)
+    this.$store.dispatch(Actions.LOAD_SETLISTS)
   }
 }
 </script>

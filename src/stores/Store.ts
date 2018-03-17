@@ -1,17 +1,20 @@
 import Vue from 'vue'
 import Vuex, { MutationTree, GetterTree, ActionTree } from 'vuex'
 import Song from '../classes/Song'
-import Project from '../classes/Project'
+import SetList from '../classes/SetList'
 import { Mutations, Actions, Note, MusicSymbols } from '../constants'
 import SongPart from '../classes/SongPart'
 import ISongData from '../interfaces/ISongData'
-import mockProject from '../../__MOCKS/data'
+import mockSetList from '../../__MOCKS/data'
 import FirestoreDatabaseConnection from '../db'
+import User from '../classes/User'
 
 Vue.use(Vuex)
 
 export interface IState {
-  project?: Project
+  user?: User
+  setList?: SetList
+  setLists?: SetList[]
   songs: Song[]
   editModeId: string
   currSong?: Song
@@ -19,6 +22,7 @@ export interface IState {
 }
 
 const initialState: IState = {
+  user: undefined,
   songs: [],
   editModeId: '',
   currSong: undefined,
@@ -26,8 +30,14 @@ const initialState: IState = {
 }
 
 const mutations: MutationTree<IState> = {
-  [Mutations.OPEN_PROJECT]: (state, project) => {
-    Vue.set(state, 'project', project)
+  [Mutations.UPDATE_USER]: (state, user) => {
+    state.user = user
+  },
+  [Mutations.LOAD_SETLISTS]: (state, setLists) => {
+    state.setLists = setLists
+  },
+  [Mutations.OPEN_SETLIST]: (state, setList) => {
+    Vue.set(state, 'setList', setList)
   },
   [Mutations.INIT_SONGS]: (state, songs) => {
     Vue.set(state, 'songs', songs)
@@ -40,7 +50,10 @@ const mutations: MutationTree<IState> = {
     }
   },
   [Mutations.ADD_SONG]: (state, newSong: Song) => {
-    state.songs.push(newSong)
+    if (!state.setList) {
+      throw new Error('No SetList defined')
+    }
+    state.setList.songs.push(newSong)
   },
   [Mutations.UPDATE_CURRENT_SONG]: (state, song) => {
     Vue.set(state, 'currSong', song)
@@ -105,36 +118,67 @@ const mutations: MutationTree<IState> = {
 }
 
 const actions: ActionTree<IState, any> = {
-  [Actions.CREATE_PROJECT]: ({ state, commit }, title: string) => {
-    const newProject = new Project(title)
+  [Actions.CREATE_SETLIST]: ({ state, commit }, title: string) => {
+    const newSetList = new SetList(title)
     // TODO: Persist to backend
-    commit(Mutations.OPEN_PROJECT, newProject)
+    commit(Mutations.OPEN_SETLIST, newSetList)
   },
-  [Actions.LOAD_PROJECT]: ({ state, commit }) => {
-    // TODO: Fetch from backend
-    let project: Project | undefined
-    if (process.env.NODE_ENV === 'development') {
-      project = mockProject
+  /**
+   * Load setlists from firebase into vuex state
+   * Open user's last opened setList
+   */
+  [Actions.LOAD_SETLISTS]: async ({ state, commit }) => {
+    try {
+      const user = new User({
+        uid: 'MockUserId',
+        name: 'Johannes Borgström',
+        avatar: '',
+        email: 'johannes@highspirits.se',
+        currentSetList: ''
+      })
+      commit(Mutations.UPDATE_USER, user)
+      if (!state.user) {
+        throw new Error('No User')
+      }
+      const setLists = await db.getSetLists(state.user.uid)
+      if (Object.keys(setLists).length > 0) {
+        commit(Mutations.LOAD_SETLISTS, setLists)
+        const setListId = await db.getUsersLastSetListId(state.user)
+        const setList = setLists[setListId]
+        commit(Mutations.OPEN_SETLIST, setList)
+      } else {
+        console.log('No setLists exists, create new')
+        debugger
+      }
+    } catch (error) {
+      console.log('Error in Actions.LOAD_SETLISTS', error)
     }
-    if (!project) {
-      const storageName = localStorage.getItem('projectName')
+  },
+  [Actions.LOAD_SETLIST]: ({ state, commit }) => {
+    let setList: SetList | undefined
+    // TODO: Fetch from backend
+    if (process.env.NODE_ENV === 'development') {
+      setList = mockSetList
+    }
+    if (!setList) {
+      const storageName = localStorage.getItem('setListName')
       if (storageName) {
-        project = new Project(storageName)
+        setList = new SetList(storageName)
         const storage = localStorage.getItem('songs')
         if (storage) {
           const storedSongs = JSON.parse(storage)
           storedSongs.forEach((storedSong: ISongData) => {
             const song = Song.deserialize(storedSong)
             if (song) {
-              project!.songs.push(song)
+              setList!.songs.push(song)
             }
           })
         }
       }
     }
-    if (project) {
-      commit(Mutations.OPEN_PROJECT, project)
-      commit(Mutations.INIT_SONGS, project.songs)
+    if (setList) {
+      commit(Mutations.OPEN_SETLIST, setList)
+      commit(Mutations.INIT_SONGS, setList.songs)
     }
   },
   [Actions.ADD_SONG]: ({ state, commit, dispatch }, songName) => {
@@ -149,18 +193,18 @@ const actions: ActionTree<IState, any> = {
         return { id, notes, name }
       })
     )
-    localStorage.setItem('projectName', state.project!.title)
+    localStorage.setItem('setListName', state.setList!.title)
     localStorage.setItem('songs', json)
   }
 }
 
 const getters: GetterTree<IState, any> = {
-  project: state => {
-    return state.project
+  setList: state => {
+    return state.setList
   },
-  projectTitle: state => {
-    if (state.project) {
-      return state.project.title || 'Untitled'
+  setListTitle: state => {
+    if (state.setList) {
+      return state.setList.title || 'Untitled'
     }
     return ''
   },

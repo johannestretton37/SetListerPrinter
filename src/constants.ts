@@ -1,11 +1,13 @@
 export enum Collections {
-  PROJECTS = 'projects',
+  SETLISTS = 'setlists',
   SONGS = 'songs',
   USERS = 'users'
 }
 
 export enum Mutations {
-  OPEN_PROJECT = 'OPEN_PROJECT',
+  UPDATE_USER = 'UPDATE_USER',
+  LOAD_SETLISTS = 'LOAD_SETLISTS',
+  OPEN_SETLIST = 'OPEN_SETLIST',
   EDIT_MODE = 'EDIT_MODE',
   ADD_SONG = 'ADD_SONG',
   EDIT_SONG = 'EDIT_SONG',
@@ -18,8 +20,9 @@ export enum Mutations {
 }
 
 export enum Actions {
-  CREATE_PROJECT = 'CREATE_PROJECT',
-  LOAD_PROJECT = 'LOAD_PROJECT',
+  CREATE_SETLIST = 'CREATE_SETLIST',
+  LOAD_SETLISTS = 'LOAD_SETLISTS',
+  LOAD_SETLIST = 'LOAD_SETLIST',
   SAVE_EDITS = 'SAVE_EDITS',
   ADD_SONG = 'ADD_SONG'
 }
