@@ -1,9 +1,9 @@
 <template>
 <div id="app">
   <div v-if="project">
-    <h1>{{ projectName }}</h1>
+    <h1>{{ projectTitle }}</h1>
     <song v-if="songs" v-for="(song, i) in songs" :song="song" :key="i" />
-    <div v-if="songs.length > 1" class="button" @click="reset">RESET</div>
+    <div v-if="songs.length > 0" class="button" @click="reset">RESET</div>
     <div class="button" @click="addNewSong">ADD NEW SONG</div>
   </div>
   <div v-else>
@@ -47,8 +47,8 @@ export default class App extends Vue {
     return this.$store.getters.project
   }
 
-  get projectName(): string {
-    return this.$store.getters.projectName
+  get projectTitle(): string {
+    return this.$store.getters.projectTitle
   }
 
   get songs(): SongModel[] {
@@ -68,7 +68,7 @@ export default class App extends Vue {
   private addNewSong() {
     const songName = prompt('Enter the name of the song')
     if (songName !== '') {
-      this.$store.dispatch(Actions.ADD_NEW_SONG, songName)
+      this.$store.dispatch(Actions.ADD_SONG, songName)
     }
   }
 
@@ -118,7 +118,8 @@ form {
     text-align: center;
     padding: 0.6em 2em;
   }
-  input {
+  input,
+  button {
     padding: 0.6em 2em;
     font-size: 1em;
     appearance: none;

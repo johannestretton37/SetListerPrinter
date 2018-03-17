@@ -6,6 +6,7 @@ import { Mutations, Actions, Note, MusicSymbols } from '../constants'
 import SongPart from '../classes/SongPart'
 import ISongData from '../interfaces/ISongData'
 import mockProject from '../../__MOCKS/data'
+import FirestoreDatabaseConnection from '../db'
 
 Vue.use(Vuex)
 
@@ -38,7 +39,7 @@ const mutations: MutationTree<IState> = {
       state.currPartId = ''
     }
   },
-  [Mutations.ADD_NEW_SONG]: (state, newSong: Song) => {
+  [Mutations.ADD_SONG]: (state, newSong: Song) => {
     state.songs.push(newSong)
   },
   [Mutations.UPDATE_CURRENT_SONG]: (state, song) => {
@@ -136,9 +137,9 @@ const actions: ActionTree<IState, any> = {
       commit(Mutations.INIT_SONGS, project.songs)
     }
   },
-  [Actions.ADD_NEW_SONG]: ({ state, commit, dispatch }, songName) => {
+  [Actions.ADD_SONG]: ({ state, commit, dispatch }, songName) => {
     const newSong = new Song(songName)
-    commit(Mutations.ADD_NEW_SONG, newSong)
+    commit(Mutations.ADD_SONG, newSong)
     dispatch(Actions.SAVE_EDITS)
   },
   [Actions.SAVE_EDITS]: ({ state, commit }) => {
@@ -148,7 +149,7 @@ const actions: ActionTree<IState, any> = {
         return { id, notes, name }
       })
     )
-    localStorage.setItem('projectName', state.project!.name)
+    localStorage.setItem('projectName', state.project!.title)
     localStorage.setItem('songs', json)
   }
 }
@@ -157,9 +158,9 @@ const getters: GetterTree<IState, any> = {
   project: state => {
     return state.project
   },
-  projectName: state => {
+  projectTitle: state => {
     if (state.project) {
-      return state.project.name || 'Untitled'
+      return state.project.title || 'Untitled'
     }
     return ''
   },
@@ -196,5 +197,8 @@ const store = new Vuex.Store<IState>({
   actions,
   getters
 })
+
+// Init database connection
+const db: FirestoreDatabaseConnection = new FirestoreDatabaseConnection(store)
 
 export default store

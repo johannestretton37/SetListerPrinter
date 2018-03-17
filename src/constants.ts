@@ -1,7 +1,15 @@
+export enum Collections {
+  PROJECTS = 'projects',
+  SONGS = 'songs',
+  USERS = 'users'
+}
+
 export enum Mutations {
   OPEN_PROJECT = 'OPEN_PROJECT',
   EDIT_MODE = 'EDIT_MODE',
-  ADD_NEW_SONG = 'ADD_NEW_SONG',
+  ADD_SONG = 'ADD_SONG',
+  EDIT_SONG = 'EDIT_SONG',
+  DELETE_SONG = 'DELETE_SONG',
   UPDATE_CURRENT_SONG = 'UPDATE_CURRENT_SONG',
   UPDATE_CURRENT_PART_ID = 'UPDATE_CURRENT_PART_ID',
   RESET_SONG = 'RESET_SONG',
@@ -13,7 +21,7 @@ export enum Actions {
   CREATE_PROJECT = 'CREATE_PROJECT',
   LOAD_PROJECT = 'LOAD_PROJECT',
   SAVE_EDITS = 'SAVE_EDITS',
-  ADD_NEW_SONG = 'ADD_NEW_SONG'
+  ADD_SONG = 'ADD_SONG'
 }
 
 export enum EditFields {

@@ -6,6 +6,21 @@ import uuid from 'uuid/v4'
 import Chord from './Chord'
 
 export default class Song {
+  /**
+   * Return Transfer from firestore doc
+   */
+  public static fromSnapshot = (songDoc: firebase.firestore.DocumentSnapshot) => {
+    const songData = songDoc.data()
+    if (!songData) {
+      throw new Error('Song Document Snapshot Data is undefined')
+    }
+    const { name, notes } = songData
+    const song = new Song(name, songDoc.id)
+    song.notes = notes
+    debugger
+    return song
+  }
+
   public static deserialize(data: ISongData): Song | undefined {
     if (data.name) {
       const song = new Song(data.name, data.id)
