@@ -187,7 +187,8 @@ export default class Song extends Vue {
   }
 
   private saveEdits() {
-    this.$store.dispatch(Actions.SAVE_EDITS)
+    // this.$store.dispatch(Actions.SAVE_EDITS)
+    this.$store.dispatch(Actions.EDIT_SONG, this.song)
   }
 
   private toggleShiftKey(e: KeyboardEvent) {

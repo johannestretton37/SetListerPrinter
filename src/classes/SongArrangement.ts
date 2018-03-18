@@ -17,4 +17,17 @@ export default class SongArrangement {
     const key = chord.chordFromInt(chord.rootInt, this)
     return `${key}${this.isMinor ? 'm' : ''}`
   }
+
+  public serialize = () => {
+    const parts = this.parts.map(part => {
+      return part.serialize()
+    })
+    return {
+      parts,
+      originalKey: this.originalKey,
+      preferredSign: this.preferredSign,
+      isMinor: this.isMinor,
+      transpose: this.transpose
+    }
+  }
 }

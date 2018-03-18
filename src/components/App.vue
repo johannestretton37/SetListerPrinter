@@ -56,6 +56,7 @@ export default class App extends Vue {
 
   get songs(): SongModel[] {
     const songs = this.$store.getters.songs
+    console.log('App.songs() getter invoked')
     if (songs.length === 0) {
       return []
     }

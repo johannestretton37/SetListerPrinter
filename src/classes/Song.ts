@@ -4,6 +4,7 @@ import ISongData from '../interfaces/ISongData'
 import SongPart from './SongPart'
 import uuid from 'uuid/v4'
 import Chord from './Chord'
+import IChordData from '../interfaces/IChordData'
 
 export default class Song {
   /**
@@ -17,7 +18,6 @@ export default class Song {
     const { name, notes } = songData
     const song = new Song(name, songDoc.id)
     song.notes = notes
-    debugger
     return song
   }
 
@@ -33,10 +33,10 @@ export default class Song {
             const songPart = new SongPart()
             songPart.name = part.name || ''
             if (part.chords === undefined) {
-              part.chords = []
+              part.chords = {}
             }
             const chordLines: Chord[][] = []
-            part.chords.forEach(storedChordLine => {
+            Object.values(part.chords).forEach((storedChordLine: IChordData[]) => {
               const chordLine: Chord[] = []
               storedChordLine.forEach(chordData => {
                 const chord = Chord.chordFromData(chordData)
@@ -57,5 +57,15 @@ export default class Song {
   public notes?: SongNote
   constructor(public name: string, id?: string) {
     this.id = id || uuid()
+  }
+
+  public serialize = (): ISongData => {
+    const data: ISongData = {
+      name: this.name
+    }
+    if (this.notes) {
+      data.notes = this.notes.serialize()
+    }
+    return data
   }
 }

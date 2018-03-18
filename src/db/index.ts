@@ -143,12 +143,12 @@ class FirestoreDatabaseConnection {
         .onSnapshot(snapshot => {
           snapshot.docChanges.forEach(change => {
             const song = Song.fromSnapshot(change.doc)
-            const transferId = change.doc.id
+            // const songId = change.doc.id
             if (change.doc.metadata.hasPendingWrites) {
               // console.log('LOCAL CHANGE ONLY')
               switch (change.type) {
                 case 'added':
-                  // console.log(`Adding transfer ${transfer.date} to currentSetList`)
+                  console.log(`Adding song ${song.name} to currentSetList`)
                   this.store.commit(Mutations.ADD_SONG, song)
                   break
                 case 'modified':
@@ -164,7 +164,7 @@ class FirestoreDatabaseConnection {
               // console.log('INCOMING CHANGE - UPDATE UI!!!')
               switch (change.type) {
                 case 'added':
-                  // console.log(`Adding transfer ${transfer.date} to currentSetList`)
+                  console.log(`Adding song ${song.name} to currentSetList`)
                   this.store.commit(Mutations.ADD_SONG, song)
                   break
                 case 'modified':
@@ -179,6 +179,92 @@ class FirestoreDatabaseConnection {
             }
           })
         })
+    })
+  }
+
+  public addSong = (song: Song, setListId: string): Promise<object> => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const setListsRef = await this.getCollectionRef(Collections.SETLISTS)
+        const songsRef = await setListsRef.doc(setListId).collection(Collections.SONGS)
+        // // Check if song already exists
+        // let songExists = false
+        const serializedSong = song.serialize()
+        // const songDocs = await songsRef
+        //   .where('amount', '==', serializedSong.amount)
+        //   .where('paidBy', '==', serializedSong.paidBy)
+        //   .where('receiver', '==', serializedSong.receiver)
+        //   .where('message', '==', serializedSong.message)
+        //   .get()
+        // if (songDocs) {
+        //   songDocs.forEach(doc => {
+        //     const storedSong = doc.data()
+        //     const storedDate = new Date(storedSong.date)
+        //     if (
+        //       storedDate.getFullYear() === song.date.getFullYear() &&
+        //       storedDate.getMonth() === song.date.getMonth() &&
+        //       storedDate.getDate() === song.date.getDate()
+        //     ) {
+        //       songExists = true
+        //     }
+        //   })
+        //   // Found no matches, proceed
+        // }
+        // if (songExists) {
+        //   console.log('Song already exists')
+        //   throw new Error('Song already exists')
+        // }
+        const songDoc = await songsRef.add(serializedSong)
+        return resolve(songDoc)
+      } catch (error) {
+        console.error(error)
+        return reject(error)
+      }
+    })
+  }
+
+  public editSong = (song: Song, setListId: string): Promise<object> => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const setListsRef = await this.getCollectionRef(Collections.SETLISTS)
+        const songsRef = await setListsRef.doc(setListId).collection(Collections.SONGS)
+        // // Check if song already exists
+        const songRef = await songsRef.doc(song.id)
+        // let songExists = false
+        const serializedSong = song.serialize()
+        console.log('serializedSong:', serializedSong)
+        // const songDocs = await songsRef
+        //   .where('amount', '==', serializedSong.amount)
+        //   .where('paidBy', '==', serializedSong.paidBy)
+        //   .where('receiver', '==', serializedSong.receiver)
+        //   .where('message', '==', serializedSong.message)
+        //   .get()
+        // if (songDocs) {
+        //   songDocs.forEach(doc => {
+        //     const storedSong = doc.data()
+        //     const storedDate = new Date(storedSong.date)
+        //     if (
+        //       storedDate.getFullYear() === song.date.getFullYear() &&
+        //       storedDate.getMonth() === song.date.getMonth() &&
+        //       storedDate.getDate() === song.date.getDate()
+        //     ) {
+        //       songExists = true
+        //     }
+        //   })
+        //   // Found no matches, proceed
+        // }
+        // if (songExists) {
+        //   console.log('Song already exists')
+        //   throw new Error('Song already exists')
+        // }
+        const songDoc = await songRef.set(serializedSong, {
+          merge: true
+        })
+        return resolve(song)
+      } catch (error) {
+        console.error(error)
+        return reject(error)
+      }
     })
   }
 
@@ -224,47 +310,6 @@ class FirestoreDatabaseConnection {
   //     debugger
   //     return project
   //   }
-  // }
-
-  // public addTransfer = (transfer: Transfer, projectId: string, userId: string): Promise<object> => {
-  //   return new Promise(async (resolve, reject) => {
-  //     try {
-  //       const projectsRef = await this.getCollectionRef(Collections.SETLISTS)
-  //       const transfersRef = await projectsRef.doc(projectId).collection(Collections.TRANSFERS)
-  //       // Check if transfer already exists
-  //       let transferExists = false
-  //       const serializedTransfer = transfer.serialize(userId)
-  //       const transferDocs = await transfersRef
-  //         .where('amount', '==', serializedTransfer.amount)
-  //         .where('paidBy', '==', serializedTransfer.paidBy)
-  //         .where('receiver', '==', serializedTransfer.receiver)
-  //         .where('message', '==', serializedTransfer.message)
-  //         .get()
-  //       if (transferDocs) {
-  //         transferDocs.forEach(doc => {
-  //           const storedTransfer = doc.data()
-  //           const storedDate = new Date(storedTransfer.date)
-  //           if (
-  //             storedDate.getFullYear() === transfer.date.getFullYear() &&
-  //             storedDate.getMonth() === transfer.date.getMonth() &&
-  //             storedDate.getDate() === transfer.date.getDate()
-  //           ) {
-  //             transferExists = true
-  //           }
-  //         })
-  //         // Found no matches, proceed
-  //       }
-  //       if (transferExists) {
-  //         console.log('Transfer already exists')
-  //         throw new Error('Transfer already exists')
-  //       }
-  //       const transferDoc = await transfersRef.add(serializedTransfer)
-  //       return resolve(transferDoc)
-  //     } catch (error) {
-  //       console.error(error)
-  //       return reject(error)
-  //     }
-  //   })
   // }
 
   // public addTransfers = (

@@ -24,7 +24,8 @@ export enum Actions {
   LOAD_SETLISTS = 'LOAD_SETLISTS',
   LOAD_SETLIST = 'LOAD_SETLIST',
   SAVE_EDITS = 'SAVE_EDITS',
-  ADD_SONG = 'ADD_SONG'
+  ADD_SONG = 'ADD_SONG',
+  EDIT_SONG = 'EDIT_SONG'
 }
 
 export enum EditFields {

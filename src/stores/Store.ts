@@ -15,7 +15,6 @@ export interface IState {
   user?: User
   setList?: SetList
   setLists?: SetList[]
-  songs: Song[]
   editModeId: string
   currSong?: Song
   currPartId: string
@@ -23,7 +22,6 @@ export interface IState {
 
 const initialState: IState = {
   user: undefined,
-  songs: [],
   editModeId: '',
   currSong: undefined,
   currPartId: ''
@@ -38,6 +36,7 @@ const mutations: MutationTree<IState> = {
   },
   [Mutations.OPEN_SETLIST]: (state, setList) => {
     Vue.set(state, 'setList', setList)
+    db.watchSetList(setList)
   },
   [Mutations.INIT_SONGS]: (state, songs) => {
     Vue.set(state, 'songs', songs)
@@ -53,7 +52,18 @@ const mutations: MutationTree<IState> = {
     if (!state.setList) {
       throw new Error('No SetList defined')
     }
-    state.setList.songs.push(newSong)
+    const index = state.setList.songs.length
+    Vue.set(state.setList.songs, index, newSong)
+  },
+  [Mutations.EDIT_SONG]: (state, editedSong: Song) => {
+    if (!state.setList) {
+      throw new Error('No SetList defined')
+    }
+    const index = state.setList.songs.findIndex(song => song.id === editedSong.id)
+    if (index === -1) {
+      throw new Error('Found no song to edit')
+    }
+    Vue.set(state.setList.songs, index, editedSong)
   },
   [Mutations.UPDATE_CURRENT_SONG]: (state, song) => {
     Vue.set(state, 'currSong', song)
@@ -71,12 +81,12 @@ const mutations: MutationTree<IState> = {
   [Mutations.RESET_SONG]: (state, song) => {
     state.editModeId = ''
     state.currSong = undefined
-    const index = state.songs.findIndex(storedSong => storedSong.id === song.id)
-    Vue.set(state.songs, index, song)
+    const index = state.setList!.songs.findIndex(storedSong => storedSong.id === song.id)
+    Vue.set(state.setList!.songs, index, song)
   },
   [Mutations.EDIT_SONG_KEY]: (state, { newKey, id }) => {
-    const index = state.songs.findIndex(storedSong => storedSong.id === id)
-    const song = state.songs[index]
+    const index = state.setList!.songs.findIndex(storedSong => storedSong.id === id)
+    const song = state.setList!.songs[index]
     // state.currSong = song
     state.editModeId = id
     if (song.notes && song.notes.arrangement) {
@@ -109,7 +119,7 @@ const mutations: MutationTree<IState> = {
         // Set initial originalKey value
         console.log('Set initial originalKey value', song)
         // arrangement.originalKey = newKey.toUpperCase()
-        Vue.set(state.songs[index].notes!.arrangement, 'originalKey', newKeyCapitalized)
+        Vue.set(state.setList!.songs[index].notes!.arrangement, 'originalKey', newKeyCapitalized)
       }
     } else {
       throw new Error('Song has no notes:' + song.name)
@@ -181,14 +191,19 @@ const actions: ActionTree<IState, any> = {
       commit(Mutations.INIT_SONGS, setList.songs)
     }
   },
-  [Actions.ADD_SONG]: ({ state, commit, dispatch }, songName) => {
+  [Actions.ADD_SONG]: async ({ state, commit, dispatch }, songName) => {
     const newSong = new Song(songName)
-    commit(Mutations.ADD_SONG, newSong)
-    dispatch(Actions.SAVE_EDITS)
+    const addedSong = await db.addSong(newSong, state.setList!.id)
+    // commit(Mutations.ADD_SONG, newSong)
+    // dispatch(Actions.SAVE_EDITS)
+  },
+  [Actions.EDIT_SONG]: async ({ state, commit }, song) => {
+    const editedSong = await db.editSong(song, state.setList!.id)
+    console.log('editedSong:', editedSong)
   },
   [Actions.SAVE_EDITS]: ({ state, commit }) => {
     const json = JSON.stringify(
-      state.songs.map(song => {
+      state.setList!.songs.map(song => {
         const { id, notes, name } = song
         return { id, notes, name }
       })
@@ -215,7 +230,10 @@ const getters: GetterTree<IState, any> = {
     return state.currSong
   },
   currKey: state => {
-    const editSong = state.songs.find(song => song.id === state.editModeId)
+    if (state.setList === undefined) {
+      return ''
+    }
+    const editSong = state.setList!.songs.find(song => song.id === state.editModeId)
     if (editSong && editSong.notes && editSong.notes.arrangement) {
       return editSong.notes.arrangement.key()
     }
@@ -231,7 +249,10 @@ const getters: GetterTree<IState, any> = {
     }
   },
   songs: state => {
-    return state.songs
+    if (!state.setList) {
+      return []
+    }
+    return state.setList.songs
   }
 }
 

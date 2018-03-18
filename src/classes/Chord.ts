@@ -194,6 +194,19 @@ class Chord {
     return chord
   }
 
+  public serialize = (): IChordData => {
+    return {
+      rootInt: this.rootInt,
+      rootNote: this.rootNote,
+      rootNoteSign: this.rootNoteSign,
+      bassInt: this.bassInt,
+      bassNote: this.bassNote,
+      bassNoteSign: this.bassNoteSign,
+      isMinor: this.isMinor,
+      modifiers: this.modifiers
+    }
+  }
+
   private sign(input: string): string {
     if (input === '') {
       return ''

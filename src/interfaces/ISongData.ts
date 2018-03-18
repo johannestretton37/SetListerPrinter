@@ -12,7 +12,7 @@ export default interface ISongData {
       isMinor: boolean
       parts: Array<{
         name?: string
-        chords?: IChordData[][]
+        chords?: { [key: string]: IChordData[] }
       }>
     }
   }
