@@ -23,6 +23,7 @@ export default class Song {
   public static deserialize(data: ISongData): Song | undefined {
     if (data.name) {
       const song = new Song(data.name, data.id)
+      song.index = data.index
       if (data.notes && data.notes.arrangement) {
         const arrangement = new SongArrangement()
         Object.assign(arrangement, data.notes.arrangement)
@@ -53,6 +54,7 @@ export default class Song {
     }
   }
   public id: string
+  public index: number = 0
   public notes?: SongNote
   constructor(public name: string, id?: string) {
     this.id = id || uuid()
@@ -60,6 +62,7 @@ export default class Song {
 
   public serialize = (): ISongData => {
     const data: ISongData = {
+      index: this.index,
       name: this.name
     }
     if (this.notes) {

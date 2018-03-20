@@ -216,3 +216,5 @@ class Chord {
 }
 
 export default Chord
+
+export const cursorChord = new Chord()

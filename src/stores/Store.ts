@@ -63,8 +63,12 @@ const mutations: MutationTree<IState> = {
     if (!state.setList) {
       throw new Error('No SetList defined')
     }
-    const index = state.setList.songs.length
-    Vue.set(state.setList.songs, index, newSong)
+    const songs = state.setList.songs
+    songs.push(newSong)
+    songs.sort((songA: Song, songB: Song): number => {
+      return songA.index > songB.index ? 1 : -1
+    })
+    Vue.set(state.setList, 'songs', songs)
   },
   [Mutations.EDIT_SONG]: (state, editedSong: Song) => {
     if (!state.setList) {
@@ -209,10 +213,9 @@ const actions: ActionTree<IState, any> = {
     // }
   },
   [Actions.ADD_SONG]: async ({ state, commit, dispatch }, songName) => {
-    console.log('Actions.ADD_SONG')
     const newSong = new Song(songName)
+    newSong.index = state.setList!.songs.length
     const addedSong = await db.addSong(newSong, state.setList!.id)
-    console.log('Added song with id', addedSong.id)
     // commit(Mutations.ADD_SONG, newSong)
     // dispatch(Actions.SAVE_EDITS)
   },

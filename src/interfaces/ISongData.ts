@@ -3,6 +3,7 @@ import IChordData from '../interfaces/IChordData'
 
 export default interface ISongData {
   id?: string
+  index: number
   name: string
   notes?: {
     arrangement?: {

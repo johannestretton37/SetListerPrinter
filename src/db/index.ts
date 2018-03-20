@@ -155,7 +155,7 @@ class FirestoreDatabaseConnection {
               switch (change.type) {
                 case 'added':
                   console.log(
-                    `- Adding song ${song.name} ${song.id} to currentSetList .hasPendingWrites:TRUE`
+                    `- Adding song ${song.name} ${song.id} to setList at index ${song.index}`
                   )
                   this.store.commit(Mutations.ADD_SONG, song)
                   break
@@ -172,9 +172,7 @@ class FirestoreDatabaseConnection {
               // console.log('INCOMING CHANGE - UPDATE UI!!!')
               switch (change.type) {
                 case 'added':
-                  console.log(
-                    `- Adding song ${song.name} to currentSetList .hasPendingWrites:FALSE`
-                  )
+                  console.log(`- Adding song ${song.name} to setList at index ${song.index}`)
                   this.store.commit(Mutations.ADD_SONG, song)
                   break
                 case 'modified':
@@ -200,30 +198,6 @@ class FirestoreDatabaseConnection {
         // // Check if song already exists
         // let songExists = false
         const serializedSong = song.serialize()
-        // const songDocs = await songsRef
-        //   .where('amount', '==', serializedSong.amount)
-        //   .where('paidBy', '==', serializedSong.paidBy)
-        //   .where('receiver', '==', serializedSong.receiver)
-        //   .where('message', '==', serializedSong.message)
-        //   .get()
-        // if (songDocs) {
-        //   songDocs.forEach(doc => {
-        //     const storedSong = doc.data()
-        //     const storedDate = new Date(storedSong.date)
-        //     if (
-        //       storedDate.getFullYear() === song.date.getFullYear() &&
-        //       storedDate.getMonth() === song.date.getMonth() &&
-        //       storedDate.getDate() === song.date.getDate()
-        //     ) {
-        //       songExists = true
-        //     }
-        //   })
-        //   // Found no matches, proceed
-        // }
-        // if (songExists) {
-        //   console.log('Song already exists')
-        //   throw new Error('Song already exists')
-        // }
         const songDoc = await songsRef.add(serializedSong)
         return resolve(songDoc)
       } catch (error) {

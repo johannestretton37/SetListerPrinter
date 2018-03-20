@@ -73,7 +73,7 @@ import SongModel from '../classes/Song'
 import { Mutations, Actions, EditFields, MusicSymbols } from '../constants'
 import { Store } from 'vuex'
 import { IState } from '../stores/Store'
-import Chord from '../classes/Chord'
+import Chord, { cursorChord } from '../classes/Chord'
 import SongPart from '../classes/SongPart';
 import SongNote from '../classes/SongNote';
 import SongArrangement from '../classes/SongArrangement';
@@ -258,7 +258,14 @@ export default class Song extends Vue {
           console.log(`Let's add ${value} to ${this.currField}`)
           try {
             const chord = Chord.parse(value, currSong.notes!.arrangement)
-            currPart.chords[currPart.chords.length - 1].push(chord)
+            if (!currPart.chords) {
+              currPart.chords = [[chord]]
+            } else if (currPart.chords[currPart.chords.length - 1][0].rootInt === -1) {
+              // This is a new row, replace placeholder chord
+              currPart.chords[currPart.chords.length - 1][0] = chord
+            } else {
+              currPart.chords[currPart.chords.length - 1].push(chord)
+            }
             // this.$store.commit(Mutations.UPDATE_CURRENT_SONG, currSong)
           } catch (error) {
             console.log(error)
@@ -294,7 +301,7 @@ export default class Song extends Vue {
     // Add new empty array to currSong.notes.arrangement.chords
     if (currSong.notes !== undefined) {
       const last = currSong.notes.arrangement.parts.length - 1
-      currSong.notes.arrangement.parts[last].chords.push([])
+      currSong.notes.arrangement.parts[last].chords.push([cursorChord])
     }
   }
 
@@ -383,7 +390,7 @@ export default class Song extends Vue {
     max-width: 46em;
     .part {
       display: grid;
-      grid-template-columns: 120px 1fr;
+      grid-template-columns: 150px 1fr;
       grid-template-rows: 1fr;
       grid-gap: 2px;
       margin-bottom: 2px;

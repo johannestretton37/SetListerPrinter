@@ -3,8 +3,8 @@
   <div v-if="setList">
     <h1>{{ setListTitle }}</h1>
     <song v-if="songs" v-for="(song, i) in songs" :song="song" :key="i" />
-    <div v-if="songs.length > 0" class="button" @click="reset">RESET</div>
     <div class="button" @click="addNewSong">ADD NEW SONG</div>
+    <div v-if="songs.length > 0" class="button" @click="reset">RESET ALL SONGS</div>
   </div>
   <div v-else>
     <h1>SetListPrinter 1.0</h1>
