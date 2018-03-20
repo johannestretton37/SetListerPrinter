@@ -11,13 +11,12 @@ export default class Song {
    * Return Transfer from firestore doc
    */
   public static fromSnapshot = (songDoc: firebase.firestore.DocumentSnapshot) => {
-    const songData = songDoc.data()
+    const songData = songDoc.data() as ISongData
+    songData.id = songDoc.id
     if (!songData) {
       throw new Error('Song Document Snapshot Data is undefined')
     }
-    const { name, notes } = songData
-    const song = new Song(name, songDoc.id)
-    song.notes = notes
+    const song = Song.deserialize(songData)
     return song
   }
 

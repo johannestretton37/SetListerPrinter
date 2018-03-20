@@ -5,7 +5,7 @@ import SetList from '../classes/SetList'
 import { Mutations, Actions, Note, MusicSymbols } from '../constants'
 import SongPart from '../classes/SongPart'
 import ISongData from '../interfaces/ISongData'
-import mockSetList from '../../__MOCKS/data'
+// import mockSetList from '../../__MOCKS/data'
 import FirestoreDatabaseConnection from '../db'
 import User from '../classes/User'
 
@@ -64,6 +64,16 @@ const mutations: MutationTree<IState> = {
       throw new Error('Found no song to edit')
     }
     Vue.set(state.setList.songs, index, editedSong)
+  },
+  [Mutations.DELETE_SONG]: (state, editedSong: Song) => {
+    if (!state.setList) {
+      throw new Error('No SetList defined')
+    }
+    const index = state.setList.songs.findIndex(song => song.id === editedSong.id)
+    if (index === -1) {
+      throw new Error('Found no song to delete')
+    }
+    state.setList.songs.splice(index, 1)
   },
   [Mutations.UPDATE_CURRENT_SONG]: (state, song) => {
     Vue.set(state, 'currSong', song)
@@ -165,33 +175,31 @@ const actions: ActionTree<IState, any> = {
     }
   },
   [Actions.LOAD_SETLIST]: ({ state, commit }) => {
-    let setList: SetList | undefined
-    // TODO: Fetch from backend
-    if (process.env.NODE_ENV === 'development') {
-      setList = mockSetList
-    }
-    if (!setList) {
-      const storageName = localStorage.getItem('setListName')
-      if (storageName) {
-        setList = new SetList(storageName)
-        const storage = localStorage.getItem('songs')
-        if (storage) {
-          const storedSongs = JSON.parse(storage)
-          storedSongs.forEach((storedSong: ISongData) => {
-            const song = Song.deserialize(storedSong)
-            if (song) {
-              setList!.songs.push(song)
-            }
-          })
-        }
-      }
-    }
-    if (setList) {
-      commit(Mutations.OPEN_SETLIST, setList)
-      commit(Mutations.INIT_SONGS, setList.songs)
-    }
+    debugger
+    // let setList: SetList | undefined
+    // if (!setList) {
+    //   const storageName = localStorage.getItem('setListName')
+    //   if (storageName) {
+    //     setList = new SetList(storageName)
+    //     const storage = localStorage.getItem('songs')
+    //     if (storage) {
+    //       const storedSongs = JSON.parse(storage)
+    //       storedSongs.forEach((storedSong: ISongData) => {
+    //         const song = Song.deserialize(storedSong)
+    //         if (song) {
+    //           setList!.songs.push(song)
+    //         }
+    //       })
+    //     }
+    //   }
+    // }
+    // if (setList) {
+    //   commit(Mutations.OPEN_SETLIST, setList)
+    //   commit(Mutations.INIT_SONGS, setList.songs)
+    // }
   },
   [Actions.ADD_SONG]: async ({ state, commit, dispatch }, songName) => {
+    console.log('Actions.ADD_SONG')
     const newSong = new Song(songName)
     const addedSong = await db.addSong(newSong, state.setList!.id)
     // commit(Mutations.ADD_SONG, newSong)

@@ -143,12 +143,20 @@ class FirestoreDatabaseConnection {
         .onSnapshot(snapshot => {
           snapshot.docChanges.forEach(change => {
             const song = Song.fromSnapshot(change.doc)
+            if (!song) {
+              console.log(change.doc)
+              throw new Error('Song is undefined')
+            }
             // const songId = change.doc.id
             if (change.doc.metadata.hasPendingWrites) {
               // console.log('LOCAL CHANGE ONLY')
+              const firestoreId = change.doc.id
+              song.id = firestoreId
               switch (change.type) {
                 case 'added':
-                  console.log(`Adding song ${song.name} to currentSetList`)
+                  console.log(
+                    `Adding song ${song.name} ${song.id} to currentSetList .hasPendingWrites:TRUE`
+                  )
                   this.store.commit(Mutations.ADD_SONG, song)
                   break
                 case 'modified':
@@ -164,7 +172,7 @@ class FirestoreDatabaseConnection {
               // console.log('INCOMING CHANGE - UPDATE UI!!!')
               switch (change.type) {
                 case 'added':
-                  console.log(`Adding song ${song.name} to currentSetList`)
+                  console.log(`Adding song ${song.name} to currentSetList .hasPendingWrites:FALSE`)
                   this.store.commit(Mutations.ADD_SONG, song)
                   break
                 case 'modified':
