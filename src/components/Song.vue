@@ -103,9 +103,9 @@ export default class Song extends Vue {
       case EditFields.PART:
         return 'Add song part, then <b>ENTER</b>'
       case EditFields.CHORD:
-        return `Add a chord, then <b>SPACE</b> or <b>TAB</b> to enter the next.<br>
+        return `Enter a chord, then <b>SPACE</b> or <b>TAB</b> to add it.<br>
         <b>ENTER</b> will add another row.<br>
-        <b>SHIFT</b> + <b>ENTER</b> adds a new part.`
+        <b>SHIFT</b> + <b>ENTER</b> creates a new part.`
       default:
         return ''
     }
@@ -142,7 +142,7 @@ export default class Song extends Vue {
   private startEditMode() {
     this.$store.commit(Mutations.EDIT_MODE, this.song.id)
     if (this.song.notes && this.song.notes.arrangement) {
-      this.$store.commit(Mutations.UPDATE_CURRENT_SONG, this.song)
+      // this.$store.commit(Mutations.UPDATE_CURRENT_SONG, this.song)
       const key = this.song.notes.arrangement.key()
       if (key === '') {
         this.currField = EditFields.KEY
@@ -187,15 +187,12 @@ export default class Song extends Vue {
   }
 
   private saveEdits() {
-    // this.$store.dispatch(Actions.SAVE_EDITS)
     this.$store.dispatch(Actions.EDIT_SONG, this.song)
   }
 
   private toggleShiftKey(e: KeyboardEvent) {
-    console.log('toggleShiftKey()')
     this.addUserInput()
     this.addNewPart()
-    console.log(this.getCurrSong())
   }
 
   private handleDelete(e: KeyboardEvent) {
@@ -235,7 +232,7 @@ export default class Song extends Vue {
   private addUserInput() {
     if (this.userInput === '') {
       if (this.currField === EditFields.KEY) {
-        this.getCurrPart()
+        const currPart = this.getCurrPart()
         this.currField = EditFields.PART
         this.$store.commit(Mutations.EDIT_SONG_KEY, { newKey: MusicSymbols.gClef, id: this.song.id})
         this.$store.commit(Mutations.UPDATE_CURRENT_PART_ID)
@@ -254,7 +251,7 @@ export default class Song extends Vue {
         case EditFields.PART:
           console.log(`Let's add ${value} to ${this.currField}`)
           currPart.name = value
-          this.$store.commit(Mutations.UPDATE_CURRENT_SONG, currSong)
+          // this.$store.commit(Mutations.UPDATE_CURRENT_SONG, currSong)
           this.currField = EditFields.CHORD
         break
         case EditFields.CHORD:
@@ -262,8 +259,9 @@ export default class Song extends Vue {
           try {
             const chord = Chord.parse(value, currSong.notes!.arrangement)
             currPart.chords[currPart.chords.length - 1].push(chord)
-            this.$store.commit(Mutations.UPDATE_CURRENT_SONG, currSong)
-          } catch {
+            // this.$store.commit(Mutations.UPDATE_CURRENT_SONG, currSong)
+          } catch (error) {
+            console.log(error)
             alert('There is no chord named ' + value)
           }
         break
@@ -287,7 +285,8 @@ export default class Song extends Vue {
     const newPart = new SongPart()
     currSong.notes.arrangement.parts.push(newPart)
     this.currField = EditFields.PART
-    this.$store.commit(Mutations.UPDATE_CURRENT_SONG, currSong)
+    this.$store.commit(Mutations.UPDATE_CURRENT_PART_ID, newPart.id)
+//    this.$store.commit(Mutations.UPDATE_CURRENT_SONG, currSong)
   }
 
   private addNewChordLine() {
@@ -300,28 +299,52 @@ export default class Song extends Vue {
   }
 
   private getCurrSong(): SongModel {
-    let currSong = (this.$store as Store<IState>).state!.currSong
-    if (!currSong) {
-      this.$store.commit(Mutations.EDIT_MODE, this.song.id)
-      this.$store.commit(Mutations.UPDATE_CURRENT_SONG, this.song)
-      currSong = this.song
-    }
-    return currSong!
+    return this.song
   }
 
   private getCurrPart(): SongPart {
-    const currSong = this.getCurrSong()
-    if (currSong.notes === undefined) {
-      const arrangement = new SongArrangement()
-      const newPart = new SongPart()
-      arrangement.parts.push(newPart)
-      currSong.notes = new SongNote(arrangement)
-      return currSong.notes.arrangement.parts[0]
+    if (this.song.notes && this.song.notes!.arrangement && this.song.notes!.arrangement!.parts) {
+      const lastPart = this.song.notes!.arrangement!.parts.length - 1
+      const currPartId = this.song.notes!.arrangement!.parts[lastPart].id
+      this.$store.commit(Mutations.UPDATE_CURRENT_PART_ID, currPartId)
     } else {
-      const last = currSong.notes!.arrangement.parts.length - 1
-      return currSong.notes!.arrangement.parts[last]
+      const arrangement = new SongArrangement()
+      arrangement.parts = [new SongPart()]
+      this.song.notes = new SongNote(arrangement)
+      const currPartId = arrangement.parts[0].id
+      this.$store.commit(Mutations.UPDATE_CURRENT_PART_ID, currPartId)
+    }
+    const currPart = this.song.notes!.arrangement.parts.find(part => part.id === this.currPartId)
+    if (currPart) {
+      return currPart
+    } else {
+      debugger
+      return new SongPart()
     }
   }
+  // private getCurrSong(): SongModel {
+  //   let currSong = (this.$store as Store<IState>).state!.currSong
+  //   if (!currSong) {
+  //     this.$store.commit(Mutations.EDIT_MODE, this.song.id)
+  //     this.$store.commit(Mutations.UPDATE_CURRENT_SONG, this.song)
+  //     currSong = this.song
+  //   }
+  //   return currSong!
+  // }
+
+  // private getCurrPart(): SongPart {
+  //   const currSong = this.getCurrSong()
+  //   if (currSong.notes === undefined) {
+  //     const arrangement = new SongArrangement()
+  //     const newPart = new SongPart()
+  //     arrangement.parts.push(newPart)
+  //     currSong.notes = new SongNote(arrangement)
+  //     return currSong.notes.arrangement.parts[0]
+  //   } else {
+  //     const last = currSong.notes!.arrangement.parts.length - 1
+  //     return currSong.notes!.arrangement.parts[last]
+  //   }
+  // }
 }
 </script>
 

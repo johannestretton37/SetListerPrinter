@@ -155,7 +155,7 @@ class FirestoreDatabaseConnection {
               switch (change.type) {
                 case 'added':
                   console.log(
-                    `Adding song ${song.name} ${song.id} to currentSetList .hasPendingWrites:TRUE`
+                    `- Adding song ${song.name} ${song.id} to currentSetList .hasPendingWrites:TRUE`
                   )
                   this.store.commit(Mutations.ADD_SONG, song)
                   break
@@ -172,7 +172,9 @@ class FirestoreDatabaseConnection {
               // console.log('INCOMING CHANGE - UPDATE UI!!!')
               switch (change.type) {
                 case 'added':
-                  console.log(`Adding song ${song.name} to currentSetList .hasPendingWrites:FALSE`)
+                  console.log(
+                    `- Adding song ${song.name} to currentSetList .hasPendingWrites:FALSE`
+                  )
                   this.store.commit(Mutations.ADD_SONG, song)
                   break
                 case 'modified':
@@ -190,7 +192,7 @@ class FirestoreDatabaseConnection {
     })
   }
 
-  public addSong = (song: Song, setListId: string): Promise<object> => {
+  public addSong = (song: Song, setListId: string): Promise<{ id: string }> => {
     return new Promise(async (resolve, reject) => {
       try {
         const setListsRef = await this.getCollectionRef(Collections.SETLISTS)
@@ -240,7 +242,6 @@ class FirestoreDatabaseConnection {
         const songRef = await songsRef.doc(song.id)
         // let songExists = false
         const serializedSong = song.serialize()
-        console.log('serializedSong:', serializedSong)
         // const songDocs = await songsRef
         //   .where('amount', '==', serializedSong.amount)
         //   .where('paidBy', '==', serializedSong.paidBy)
@@ -268,7 +269,7 @@ class FirestoreDatabaseConnection {
         const songDoc = await songRef.set(serializedSong, {
           merge: true
         })
-        return resolve(song)
+        return resolve()
       } catch (error) {
         console.error(error)
         return reject(error)

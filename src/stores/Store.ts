@@ -16,14 +16,14 @@ export interface IState {
   setList?: SetList
   setLists?: SetList[]
   editModeId: string
-  currSong?: Song
+  // currSong?: Song
   currPartId: string
 }
 
 const initialState: IState = {
   user: undefined,
   editModeId: '',
-  currSong: undefined,
+  // currSong: undefined,
   currPartId: ''
 }
 
@@ -44,8 +44,19 @@ const mutations: MutationTree<IState> = {
   [Mutations.EDIT_MODE]: (state, editModeId) => {
     state.editModeId = editModeId
     if (editModeId === undefined) {
-      state.currSong = undefined
+      // state.currSong = undefined
       state.currPartId = ''
+    } else {
+      const currSong = state.setList!.songs.find(song => song.id === editModeId)
+      if (
+        currSong &&
+        currSong.notes &&
+        currSong.notes.arrangement &&
+        currSong.notes.arrangement.parts
+      ) {
+        const lastPart = currSong.notes.arrangement.parts.length - 1
+        state.currPartId = currSong.notes.arrangement.parts[lastPart].id
+      }
     }
   },
   [Mutations.ADD_SONG]: (state, newSong: Song) => {
@@ -76,21 +87,21 @@ const mutations: MutationTree<IState> = {
     state.setList.songs.splice(index, 1)
   },
   [Mutations.UPDATE_CURRENT_SONG]: (state, song) => {
-    Vue.set(state, 'currSong', song)
-    if (song.notes && song.notes.arrangement) {
-      const parts = song.notes.arrangement.parts
-      state.currPartId = parts[parts.length - 1].id
-    }
+    // Vue.set(state, 'currSong', song)
+    // if (song.notes && song.notes.arrangement) {
+    //   const parts = song.notes.arrangement.parts
+    //   state.currPartId = parts[parts.length - 1].id
+    // }
   },
-  [Mutations.UPDATE_CURRENT_PART_ID]: state => {
-    if (state.currSong!.notes && state.currSong!.notes!.arrangement) {
-      const parts = state.currSong!.notes!.arrangement.parts
-      state.currPartId = parts[parts.length - 1].id
-    }
+  [Mutations.UPDATE_CURRENT_PART_ID]: (state, currentPartId) => {
+    // if (state.currSong!.notes && state.currSong!.notes!.arrangement) {
+    //   const parts = state.currSong!.notes!.arrangement.parts
+    state.currPartId = currentPartId // parts[parts.length - 1].id
+    // }
   },
   [Mutations.RESET_SONG]: (state, song) => {
     state.editModeId = ''
-    state.currSong = undefined
+    // state.currSong = undefined
     const index = state.setList!.songs.findIndex(storedSong => storedSong.id === song.id)
     Vue.set(state.setList!.songs, index, song)
   },
@@ -175,7 +186,6 @@ const actions: ActionTree<IState, any> = {
     }
   },
   [Actions.LOAD_SETLIST]: ({ state, commit }) => {
-    debugger
     // let setList: SetList | undefined
     // if (!setList) {
     //   const storageName = localStorage.getItem('setListName')
@@ -202,12 +212,13 @@ const actions: ActionTree<IState, any> = {
     console.log('Actions.ADD_SONG')
     const newSong = new Song(songName)
     const addedSong = await db.addSong(newSong, state.setList!.id)
+    console.log('Added song with id', addedSong.id)
     // commit(Mutations.ADD_SONG, newSong)
     // dispatch(Actions.SAVE_EDITS)
   },
   [Actions.EDIT_SONG]: async ({ state, commit }, song) => {
-    const editedSong = await db.editSong(song, state.setList!.id)
-    console.log('editedSong:', editedSong)
+    await db.editSong(song, state.setList!.id)
+    console.log('editedSong:')
   },
   [Actions.SAVE_EDITS]: ({ state, commit }) => {
     const json = JSON.stringify(
@@ -234,9 +245,9 @@ const getters: GetterTree<IState, any> = {
   editModeId: state => {
     return state.editModeId
   },
-  currSong: state => {
-    return state.currSong
-  },
+  // currSong: state => {
+  //   return state.currSong
+  // },
   currKey: state => {
     if (state.setList === undefined) {
       return ''
@@ -246,16 +257,16 @@ const getters: GetterTree<IState, any> = {
       return editSong.notes.arrangement.key()
     }
   },
-  // currPart: state => {
-  //   return state.currSong
-  // },
-  currSongParts: state => {
-    if (state.currSong && state.currSong.notes && state.currSong.notes.arrangement) {
-      return state.currSong.notes.arrangement.parts
-    } else {
-      return undefined
-    }
+  currPartId: state => {
+    return state.currPartId
   },
+  // currSongParts: state => {
+  //   if (state.currSong && state.currSong.notes && state.currSong.notes.arrangement) {
+  //     return state.currSong.notes.arrangement.parts
+  //   } else {
+  //     return undefined
+  //   }
+  // },
   songs: state => {
     if (!state.setList) {
       return []

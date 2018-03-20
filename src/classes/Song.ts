@@ -64,6 +64,7 @@ export default class Song {
     }
     if (this.notes) {
       data.notes = this.notes.serialize()
+      // console.log(JSON.stringify(data.notes))
     }
     return data
   }

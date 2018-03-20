@@ -9,12 +9,15 @@ export default class SongPart {
 
   public serialize() {
     const chords: { [key: string]: IChordData[] } = {}
-    this.chords.forEach((chordLine, i) => {
+    let i = 0
+    this.chords.forEach(chordLine => {
       const line: IChordData[] = []
       chordLine.forEach(chord => {
         line.push(chord.serialize())
       })
-      chords[`${i}`] = line
+      if (line.length > 0) {
+        chords[`${i++}`] = line
+      }
     })
     return {
       name: this.name,
