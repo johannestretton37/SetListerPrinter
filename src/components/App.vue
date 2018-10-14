@@ -36,6 +36,7 @@ import SetList from '../classes/SetList'
 import ISongData from '../interfaces/ISongData'
 import firebaseConfig from '../../config/firebase.config'
 import firebase from 'firebase'
+// tslint:disable-next-line:no-submodule-imports
 import 'firebase/firestore'
 
 @Component({

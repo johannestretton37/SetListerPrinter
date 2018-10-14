@@ -1,6 +1,6 @@
 <template>
-  <div class="song" @click="startEditMode">
-    <h4>{{ song.name }}
+  <div class="song">
+    <h4 @click="startEditMode">{{ song.name }}
       <span
       v-if="songKey"
       v-html="songKey"
@@ -9,19 +9,36 @@
       </span>
     </h4>
     <div v-if="parts.length > 0">
+      <p>currPartId: {{ currPartId }}</p>
+      <p>currField: {{ currField }}</p>
+      <p>currChordIndexPath: [{{ currChordIndexPath.join('][') }}]</p>
       <ul class="parts">
         <li v-for="(part, p) in parts" :key="p" class="part" :class="{ active: currPartId === part.id }">
-          <div class="part-name" :class="{ active: currPartId === part.id && currField === 'PART' }">
+          <div
+            class="part-name"
+            :class="{ active: currPartId === part.id && currField === 'PART' }"
+            @click="startEditMode(part, EditFields.PART)">
             <p><b>{{ part.name }}</b></p>
           </div>
-          <div class="chords-container" :class="{ active: currPartId === part.id && currField === 'CHORD' }">
+          <div class="chords-container">
             <div class="chords" v-for="(chordLine, l) in part.chords" :key="l">
-              <div 
-              class="chord" 
-              v-for="(chord, c) in chordLine" 
-              :key="c"
-              v-html="chord.html(song.notes.arrangement)">
-              </div>
+              <template v-for="(chord, c) in chordLine">
+                <div
+                  v-if="chord.html(song.notes.arrangement)"
+                  class="chord" 
+                  :class="{ active: currPartId === part.id && currChordIndexPath[0] === l && currChordIndexPath[1] === c - 1 }"
+                  :key="c"
+                  @click="startEditMode(part, EditFields.CHORD, [l,c - 1])"
+                  v-html="chord.html(song.notes.arrangement)">
+                </div>
+                <div
+                  class="chord active" 
+                  v-if="currPartId === part.id && currChordIndexPath[0] === l && currChordIndexPath[1] === c"
+                  :key="c + 'cursor'"></div>
+              </template>
+            </div>
+            <div class="chords" v-if="currPartId === part.id && currField === 'CHORD' && part.chords === undefined">
+              <div class="chord active"></div>
             </div>
           </div>
         </li>
@@ -84,6 +101,8 @@ import SongArrangement from '../classes/SongArrangement';
   }
 })
 export default class Song extends Vue {
+  public EditFields = EditFields
+  public currChordIndexPath: number[] = [-1, 0]
   private userInput: string = ''
   private song!: SongModel
   private currField: EditFields = EditFields.PART
@@ -127,7 +146,7 @@ export default class Song extends Vue {
     return this.$store.state.currPartId
   }
 
-  get parts(): Array<{ chords: Chord[][] }> {
+  get parts(): SongPart[] {
     let parts = this.isEditMode ? this.$store.getters.currSongParts : undefined
     if (parts === undefined) {
       if (this.song.notes && this.song.notes.arrangement && this.song.notes.arrangement.parts) {
@@ -139,7 +158,7 @@ export default class Song extends Vue {
     return parts
   }
 
-  private startEditMode() {
+  private startEditMode(part:SongPart, field: EditFields, indexPath: number[]) {
     this.$store.commit(Mutations.EDIT_MODE, this.song.id)
     if (this.song.notes && this.song.notes.arrangement) {
       // this.$store.commit(Mutations.UPDATE_CURRENT_SONG, this.song)
@@ -150,7 +169,8 @@ export default class Song extends Vue {
         console.log('Key:', key)
       }
       if (this.currField === EditFields.PART) {
-        const currPart = this.song.notes.arrangement.parts.find(part => part.id === this.currPartId)
+        // tslint:disable-next-line:variable-name
+        const currPart = this.song.notes.arrangement.parts.find(_part => _part.id === this.currPartId)
         if (currPart && currPart.name) {
           this.userInput = currPart.name
         }
@@ -158,6 +178,18 @@ export default class Song extends Vue {
     } else {
       this.currField = EditFields.KEY
     }
+    if (part) {
+      this.$store.commit(Mutations.UPDATE_CURRENT_PART_ID, part.id)
+    }
+    if (field) {
+      this.currField = field;
+    }
+    if (indexPath) {
+      // TODO: Rethink this method
+      debugger
+      this.currChordIndexPath = indexPath
+    }
+
     this.$nextTick(() => {
       const input = this.$refs.input as HTMLFormElement
       input.focus()
@@ -200,17 +232,20 @@ export default class Song extends Vue {
       // Only remove stuff if field is empty
       const currSong = this.getCurrSong()
       const currPart = this.getCurrPart()
-      const lastChordLine = currPart.chords[currPart.chords.length - 1]
-      if (lastChordLine !== undefined) {
-        lastChordLine.pop()
-        if (lastChordLine.length === 0) {
-          currPart.chords.pop()
-          if (currPart.chords.length === 0) {
-            currSong.notes!.arrangement.parts.pop()
+      const chords = currPart.chords;
+      if (chords) {
+        const lastChordLine = chords[chords.length - 1]
+        if (lastChordLine !== undefined) {
+          lastChordLine.pop()
+          if (lastChordLine.length === 0) {
+            chords.pop()
+            if (chords.length === 0) {
+              currSong.notes!.arrangement.parts.pop()
+            }
           }
+          this.$store.commit(Mutations.UPDATE_CURRENT_SONG, currSong)
+          this.saveEdits()
         }
-        this.$store.commit(Mutations.UPDATE_CURRENT_SONG, currSong)
-        this.saveEdits()
       }
     }
   }
@@ -249,22 +284,34 @@ export default class Song extends Vue {
           this.currField = EditFields.PART
         break
         case EditFields.PART:
-          console.log(`Let's add ${value} to ${this.currField}`)
+          console.log(`PART: Let's add ${value} to ${this.currField}`)
           currPart.name = value
           // this.$store.commit(Mutations.UPDATE_CURRENT_SONG, currSong)
           this.currField = EditFields.CHORD
+          this.currChordIndexPath = [-1, 0]
         break
         case EditFields.CHORD:
-          console.log(`Let's add ${value} to ${this.currField}`)
+          console.log(`CHORD: Let's add ${value} to ${this.currField}`)
           try {
             const chord = Chord.parse(value, currSong.notes!.arrangement)
             if (!currPart.chords) {
               currPart.chords = [[chord]]
+              this.currChordIndexPath = [this.currChordIndexPath[0] + 1, 0]
             } else if (currPart.chords[currPart.chords.length - 1][0].rootInt === -1) {
-              // This is a new row, replace placeholder chord
+              // This is a new row, increment chordLine segment
               currPart.chords[currPart.chords.length - 1][0] = chord
+              // this.currChordIndexPath = [this.currChordIndexPath[0] + 1, 0]
             } else {
+              // This is a new chord, increment chord segment
               currPart.chords[currPart.chords.length - 1].push(chord)
+              this.currChordIndexPath = this.currChordIndexPath.map((index, i) => {
+                if (i === 0) {
+                  return index
+                } else if (i === 1) {
+                  return index + 1
+                }
+                return -1
+              })
             }
             // this.$store.commit(Mutations.UPDATE_CURRENT_SONG, currSong)
           } catch (error) {
@@ -292,6 +339,7 @@ export default class Song extends Vue {
     const newPart = new SongPart()
     currSong.notes.arrangement.parts.push(newPart)
     this.currField = EditFields.PART
+    this.currChordIndexPath = [-1, 0]
     this.$store.commit(Mutations.UPDATE_CURRENT_PART_ID, newPart.id)
 //    this.$store.commit(Mutations.UPDATE_CURRENT_SONG, currSong)
   }
@@ -301,7 +349,11 @@ export default class Song extends Vue {
     // Add new empty array to currSong.notes.arrangement.chords
     if (currSong.notes !== undefined) {
       const last = currSong.notes.arrangement.parts.length - 1
-      currSong.notes.arrangement.parts[last].chords.push([cursorChord])
+      const chords = currSong.notes.arrangement.parts[last].chords
+      if (chords) {
+        chords.push([cursorChord])
+        this.currChordIndexPath = [this.currChordIndexPath[0] + 1, 0]
+      }
     }
   }
 
@@ -412,15 +464,25 @@ export default class Song extends Vue {
       }
       .chords-container {
         padding: 0.75em 0 0.75em 2em;
+        padding: 0;
         .chords {
           display: grid;
           grid-template-columns: repeat(auto-fit, 4em);
+          .chord {
+            padding: 0.75em 1.25em;
+            &.active {
+              border: 1px dashed #999;
+              background-color: #e0f1f7;
+            }
+          }
         }
       }
-      .part-name.active,
-      .chords-container.active {
-        border: 1px dashed #999;
-        background-color: #e0f1f7;
+      .part-name,
+      .chords-container {
+        &.active {
+          border: 1px dashed #999;
+          background-color: #e0f1f7;
+        }
       }
     }
   }

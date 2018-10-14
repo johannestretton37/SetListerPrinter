@@ -32,19 +32,21 @@ export default class Song {
           data.notes.arrangement.parts.forEach(part => {
             const songPart = new SongPart()
             songPart.name = part.name || ''
-            if (part.chords === undefined) {
-              part.chords = {}
-            }
-            const chordLines: Chord[][] = []
-            Object.values(part.chords).forEach((storedChordLine: IChordData[]) => {
-              const chordLine: Chord[] = []
-              storedChordLine.forEach(chordData => {
-                const chord = Chord.chordFromData(chordData)
-                chordLine.push(chord)
+            songPart.id = part.id || '***'
+            if (part.chords !== undefined) {
+              //   part.chords = {}
+              // }
+              const chordLines: Chord[][] = []
+              Object.values(part.chords).forEach((storedChordLine: IChordData[]) => {
+                const chordLine: Chord[] = []
+                storedChordLine.forEach(chordData => {
+                  const chord = Chord.chordFromData(chordData)
+                  chordLine.push(chord)
+                })
+                chordLines.push(chordLine)
               })
-              chordLines.push(chordLine)
-            })
-            songPart.chords = chordLines
+              songPart.chords = chordLines
+            }
             arrangement.parts.push(songPart)
           })
         }

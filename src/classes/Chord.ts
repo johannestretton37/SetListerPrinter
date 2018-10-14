@@ -147,7 +147,6 @@ class Chord {
       // Determine if we should use 'b' or '#' by looking at arrangement's key
       // and preferredSign
       const newKey = originalKeyInt + transpose
-      console.log('Preferred:', preferredSign)
       switch (preferredSign) {
         case MusicSymbols.sharp:
           const sharpChord = chords.find((option: [string, number]) => option[0].endsWith('#'))
